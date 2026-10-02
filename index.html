@@ -48,7 +48,24 @@ body {
 .wrap { max-width: 1120px; margin-inline: auto; display: grid; gap: 56px; }
 .col { max-width: 720px; }
 h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
-h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 700; letter-spacing: -0.01em; }
+
+/* today */
+.today { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: grid; gap: 16px; }
+.greet { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 500; max-width: 40ch; }
+.today-body { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 32px; border-top: 1px solid var(--line); padding-top: 18px; }
+.today-main { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.today .tag { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.concept { font-size: 1.5rem; color: var(--c); }
+.summary { display: grid; gap: 10px; max-width: 68ch; font-size: 1.02rem; }
+.terms { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 6px 0 0; font-size: .92rem; }
+.terms:empty { display: none; }
+.terms dt { font-weight: 600; }
+.terms dd { margin: 0; color: var(--muted); }
+.today-side { display: grid; gap: 18px; align-content: start; font-size: .95rem; min-width: 0; }
+.today-side > div { display: grid; gap: 4px; }
+.today-side ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+@media (max-width: 760px) { .today-body { grid-template-columns: minmax(0, 1fr); gap: 20px; } .terms { grid-template-columns: minmax(0, 1fr); } .terms dd { margin-bottom: 6px; } }
 h2 { font-size: 1.6rem; font-weight: 700; }
 h3 { font-size: 1.1rem; font-weight: 700; }
 p { margin: 0; }
@@ -164,6 +181,25 @@ footer { font-size: .85rem; color: var(--muted); }
 </head>
 <body>
 <div class="wrap">
+  <section class="today" id="today" aria-labelledby="today-msg" style="--c: var(--accent)">
+    <span class="eyebrow" id="today-date">Today</span>
+    <h2 class="greet" id="today-msg">Good day, Rich.</h2>
+    <div class="today-body">
+      <div class="today-main">
+        <span class="tag" id="today-kind"></span>
+        <h3 class="concept" id="today-concept"></h3>
+        <div class="summary" id="today-summary"></div>
+        <dl class="terms" id="today-terms"></dl>
+      </div>
+      <aside class="today-side">
+        <div><span class="eyebrow">Do today</span><p id="today-task"></p></div>
+        <div id="today-res-wrap" hidden><span class="eyebrow">Read or watch</span><ul id="today-res"></ul></div>
+        <div><span class="eyebrow">Tomorrow</span><p id="today-next"></p></div>
+      </aside>
+    </div>
+    <p class="hint" id="today-src"></p>
+  </section>
+
   <header>
     <span class="eyebrow">8-week study plan · v2 · @Rich · ~7.5 h per week</span>
     <h1>AI Engineering Foundations</h1>
@@ -176,31 +212,6 @@ footer { font-size: .85rem; color: var(--muted); }
       <span class="progress"><span class="bar"><i id="barfill"></i></span><span id="progtxt" class="mono">0 / 8 done</span></span>
     </div>
   </header>
-
-  <section class="core" aria-labelledby="core-h">
-    <h2 id="core-h">The core point</h2>
-    <p class="thesis">A model is a fixed function: tokens go in, numbers flow through billions of weights, tokens come out. <strong>Training</strong> sets those weights once, slowly and at great cost. <strong>Inference</strong> runs the frozen weights on every request, and that is where latency and cost live. <strong>Embeddings</strong> take the model's internal numbers and use them directly as a measure of meaning you can store and search.</p>
-    <ol class="spine">
-      <li style="--c: var(--b1)"><span class="mono weeks">Weeks 1–2 · Learning</span><span class="q">What is a model, and how does it learn?</span><p>Tokens, loss and gradients, learned by building them rather than memorizing a glossary first.</p></li>
-      <li style="--c: var(--b2)"><span class="mono weeks">Weeks 3–4 · Transformers</span><span class="q">How does a transformer turn text into predictions?</span><p>Vectors and attention first, then you train a small GPT yourself.</p></li>
-      <li style="--c: var(--b3)"><span class="mono weeks">Weeks 5–6 · Inference</span><span class="q">How do frozen weights answer a request?</span><p>Decoding, sampling, serving and cost. Your eval set starts here and is reused to the end.</p></li>
-      <li style="--c: var(--b4)"><span class="mono weeks">Weeks 7–8 · Retrieval &amp; adaptation</span><span class="q">How do I make a model work on my data?</span><p>Embeddings and RAG first, fine-tuning last, in the order the decision ladder recommends.</p></li>
-    </ol>
-    <p class="anchor">The one idea to keep: weights change only during training. Everything you build on top of an API, including RAG, is inference. The decision ladder says <em>prompt → retrieve → fine-tune → train</em>: only move down a step when the one above fails. Weeks 5–8 now follow that ladder in order.</p>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th></th><th>Training</th><th>Inference</th></tr></thead>
-        <tbody>
-          <tr><th>What happens</th><td>Weights are updated</td><td>Weights are frozen; the model only predicts</td></tr>
-          <tr><th>Direction</th><td>Forward + backward pass</td><td>Forward pass only</td></tr>
-          <tr><th>Frequency</th><td>Rarely (weeks or months per run)</td><td>Every user request</td></tr>
-          <tr><th>Cost driver</th><td>Total compute (GPU-hours)</td><td>Tokens processed, latency, concurrency</td></tr>
-          <tr><th>Key metrics</th><td>Loss, eval scores</td><td>Time to first token, tokens/sec, cost per 1M tokens</td></tr>
-          <tr><th>Usually done by</th><td>Research and ML teams</td><td>Application and AI engineers</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
 
   <section aria-labelledby="cal-h" style="display:grid; gap:20px">
     <div class="cal-head">
@@ -226,6 +237,31 @@ footer { font-size: .85rem; color: var(--muted); }
     </div>
     <div class="scroller" id="scroller" tabindex="0" aria-label="Week-by-week schedule, scroll horizontally">
       <div class="track" id="track"></div>
+    </div>
+  </section>
+
+  <section class="core" aria-labelledby="core-h">
+    <h2 id="core-h">The core point</h2>
+    <p class="thesis">A model is a fixed function: tokens go in, numbers flow through billions of weights, tokens come out. <strong>Training</strong> sets those weights once, slowly and at great cost. <strong>Inference</strong> runs the frozen weights on every request, and that is where latency and cost live. <strong>Embeddings</strong> take the model's internal numbers and use them directly as a measure of meaning you can store and search.</p>
+    <ol class="spine">
+      <li style="--c: var(--b1)"><span class="mono weeks">Weeks 1–2 · Learning</span><span class="q">What is a model, and how does it learn?</span><p>Tokens, loss and gradients, learned by building them rather than memorizing a glossary first.</p></li>
+      <li style="--c: var(--b2)"><span class="mono weeks">Weeks 3–4 · Transformers</span><span class="q">How does a transformer turn text into predictions?</span><p>Vectors and attention first, then you train a small GPT yourself.</p></li>
+      <li style="--c: var(--b3)"><span class="mono weeks">Weeks 5–6 · Inference</span><span class="q">How do frozen weights answer a request?</span><p>Decoding, sampling, serving and cost. Your eval set starts here and is reused to the end.</p></li>
+      <li style="--c: var(--b4)"><span class="mono weeks">Weeks 7–8 · Retrieval &amp; adaptation</span><span class="q">How do I make a model work on my data?</span><p>Embeddings and RAG first, fine-tuning last, in the order the decision ladder recommends.</p></li>
+    </ol>
+    <p class="anchor">The one idea to keep: weights change only during training. Everything you build on top of an API, including RAG, is inference. The decision ladder says <em>prompt → retrieve → fine-tune → train</em>: only move down a step when the one above fails. Weeks 5–8 now follow that ladder in order.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Training</th><th>Inference</th></tr></thead>
+        <tbody>
+          <tr><th>What happens</th><td>Weights are updated</td><td>Weights are frozen; the model only predicts</td></tr>
+          <tr><th>Direction</th><td>Forward + backward pass</td><td>Forward pass only</td></tr>
+          <tr><th>Frequency</th><td>Rarely (weeks or months per run)</td><td>Every user request</td></tr>
+          <tr><th>Cost driver</th><td>Total compute (GPU-hours)</td><td>Tokens processed, latency, concurrency</td></tr>
+          <tr><th>Key metrics</th><td>Loss, eval scores</td><td>Time to first token, tokens/sec, cost per 1M tokens</td></tr>
+          <tr><th>Usually done by</th><td>Research and ML teams</td><td>Application and AI engineers</td></tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
@@ -565,7 +601,114 @@ footer { font-size: .85rem; color: var(--muted); }
   document.getElementById("next").addEventListener("click", function () { goTo(visibleIndex() + 1); });
   document.getElementById("jump").addEventListener("click", function () { goTo(currentWeek >= 0 ? currentWeek : 0); });
 
+  // ---- Today panel ----
+  // Built-in notes come from the plan above. A nightly job (3 AM Pacific) writes
+  // daily/YYYY-MM-DD.json with a fuller summary; when that file exists for today it replaces them.
+  var KIND_LABEL = { learn: "Learn", build: "Build", explain: "Explain", buffer: "Buffer", review: "Review", prep: "Prep", done: "Done" };
+  var PREP = {
+    concept: "Getting ready for Week 1",
+    summary: ["Week 1 starts on Monday. Use the days before it to make sure the basics are in place, so the first week is about ideas rather than setup.",
+              "You need Python with numpy in a notebook (Jupyter or Colab), a feel for vectors and the dot product, and an API key for one hosted LLM with a small spending limit."],
+    task: "Open a notebook, import numpy, and multiply two small matrices. Watch 3Blue1Brown's Essence of Linear Algebra, chapters 1–4, if vectors feel rusty."
+  };
+
+  function slot(ms) {
+    var start = parse(startInput.value || "2026-10-05");
+    var off = Math.floor((ms - start) / 86400000);
+    if (off < 0) return { phase: "prep", days: -off };
+    if (off >= 56) return { phase: "done" };
+    var i = Math.floor(off / 7), j = off % 7, w = WEEKS[i], k = DAYKIND[j];
+    var text = j < 5 ? w.d[j] : j === 5 ? (w.sat || "Catch up on anything unfinished, or rest.") : "Flashcard pass over every term learned so far.";
+    return { phase: "plan", i: i, j: j, w: w, kind: k[0], label: k[1], hrs: k[2], text: text };
+  }
+  function greeting() {
+    var h = new Date().getHours();
+    return h < 5 ? "Up early, Rich." : h < 12 ? "Good morning, Rich." : h < 18 ? "Good afternoon, Rich." : "Good evening, Rich.";
+  }
+  function localIso() {
+    var n = new Date();
+    return n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0");
+  }
+  function setText(id, t) { document.getElementById(id).textContent = t || ""; }
+  function fillToday(d) {
+    setText("today-msg", d.message);
+    var tag = document.getElementById("today-kind");
+    tag.className = "tag k-" + d.kind;
+    tag.innerHTML = '<span class="dot"></span>' + esc(d.kindLabel) + (d.hrs ? ' <span class="hrs" style="color:var(--muted);font-weight:400">' + esc(d.hrs) + "</span>" : "");
+    setText("today-concept", d.concept);
+    var sum = document.getElementById("today-summary");
+    sum.innerHTML = "";
+    (d.summary || []).forEach(function (p) { var el = document.createElement("p"); el.textContent = p; sum.appendChild(el); });
+    var terms = document.getElementById("today-terms");
+    terms.innerHTML = "";
+    (d.keyTerms || []).forEach(function (t) {
+      var dt = document.createElement("dt"); dt.textContent = t.term;
+      var dd = document.createElement("dd"); dd.textContent = t.meaning;
+      terms.appendChild(dt); terms.appendChild(dd);
+    });
+    setText("today-task", d.task);
+    var res = document.getElementById("today-res");
+    res.innerHTML = "";
+    (d.resources || []).forEach(function (r) {
+      if (!/^https?:\/\//.test(r.url || "")) return;
+      var li = document.createElement("li"), a = document.createElement("a");
+      a.href = r.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = r.title || r.url;
+      li.appendChild(a); res.appendChild(li);
+    });
+    document.getElementById("today-res-wrap").hidden = !res.children.length;
+    setText("today-next", d.tomorrow);
+    setText("today-src", d.source);
+    document.getElementById("today").style.setProperty("--c", d.color || "var(--accent)");
+  }
+  function builtInToday() {
+    var t = todayMs(), s = slot(t), n = slot(addDays(t, 1)), d;
+    var nextText = n.phase === "plan" ? "Week " + (n.i + 1) + " · " + n.label + ": " + n.text
+                 : n.phase === "prep" ? "More prep before Week 1." : "The plan is complete.";
+    if (s.phase === "prep") {
+      d = { kind: "prep", kindLabel: "Prep", concept: PREP.concept, summary: PREP.summary, task: PREP.task,
+            message: greeting() + " Your plan starts in " + s.days + (s.days === 1 ? " day" : " days") + ", so today is a light one: get your tools ready." };
+    } else if (s.phase === "done") {
+      d = { kind: "done", kindLabel: "Done", concept: "Plan complete", summary: ["All eight weeks are behind you. Revisit your capstone write-up and pick one thing to go deeper on next."],
+            task: "Re-run your eval set on the capstone and note what you would improve.", message: greeting() + " You finished the eight weeks. Nicely done." };
+    } else {
+      var opener = { learn: "Today is a reading day on", build: "Today you get your hands on", explain: "Today you put this week into your own words:",
+                     buffer: "A lighter day. Catch up on", review: "A short review day, wrapping up" }[s.kind];
+      d = { kind: s.kind, kindLabel: s.label, hrs: s.hrs, concept: s.w.t, summary: [s.w.goal],
+            keyTerms: [], task: s.text, color: "var(" + BLOCKS[Math.floor(s.i / 2)].c + ")",
+            message: greeting() + " " + opener + " " + s.w.t.toLowerCase() + "." };
+    }
+    d.tomorrow = nextText;
+    d.source = "Showing the plan's own notes. Tonight's summary has not arrived yet.";
+    setText("today-date", fmt(t, { weekday: "long", month: "long", day: "numeric" }) + (s.phase === "plan" ? " · Week " + (s.i + 1) + ", day " + (s.j + 1) : ""));
+    return d;
+  }
+  function renderToday() {
+    var base = builtInToday();
+    fillToday(base);
+    var iso = localIso();
+    fetch("daily/" + iso + ".json?v=" + iso, { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || j.date !== iso) return;
+        var d = Object.assign({}, base, {
+          message: j.message || base.message,
+          concept: j.concept || base.concept,
+          summary: Array.isArray(j.summary) && j.summary.length ? j.summary : base.summary,
+          keyTerms: Array.isArray(j.keyTerms) ? j.keyTerms : base.keyTerms,
+          task: j.task || base.task,
+          resources: Array.isArray(j.resources) ? j.resources : [],
+          tomorrow: j.tomorrow || base.tomorrow
+        });
+        var at = j.generatedAt ? new Date(j.generatedAt) : null;
+        d.source = at && !isNaN(at) ? "Summary prepared " + at.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" }) + "." : "Summary prepared overnight.";
+        fillToday(d);
+      })
+      .catch(function () {});
+  }
+
   render();
+  renderToday();
+  startInput.addEventListener("change", renderToday);
   if (currentWeek > 0) goTo(currentWeek);
 })();
 </script>
