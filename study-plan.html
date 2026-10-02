@@ -1,0 +1,563 @@
+<title>AI Engineering Foundations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: single reading column for the argument, then a full-width horizontal week track that scrolls like a wall calendar. */
+:root {
+  --bg: #f2f4f6;
+  --surface: #ffffff;
+  --ink: #16202a;
+  --muted: #586572;
+  --line: #d8dee4;
+  --accent: #2453a6;
+  --b1: #2f6fb2;  /* terminology */
+  --b2: #a85d17;  /* training */
+  --b3: #17806a;  /* inference */
+  --b4: #8a3fa0;  /* embeddings */
+  --today: #c2331f;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1418; --surface: #172027; --ink: #e6ecf1; --muted: #95a3b0; --line: #2a353f;
+    --accent: #84aaf0; --b1: #72a6e2; --b2: #e3a062; --b3: #52c3a2; --b4: #c88ad9; --today: #ff7a63;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1418; --surface: #172027; --ink: #e6ecf1; --muted: #95a3b0; --line: #2a353f;
+  --accent: #84aaf0; --b1: #72a6e2; --b2: #e3a062; --b3: #52c3a2; --b4: #c88ad9; --today: #ff7a63;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 1rem; line-height: 1.55;
+  padding-inline: 16px; padding-block: 32px 64px;
+}
+.wrap { max-width: 1120px; margin-inline: auto; display: grid; gap: 56px; }
+.col { max-width: 720px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.6rem; font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* header */
+header { display: grid; gap: 16px; }
+.lede { font-size: 1.15rem; color: var(--muted); max-width: 62ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; font-size: .95rem; }
+.meta label { display: flex; gap: 8px; align-items: center; color: var(--muted); }
+.meta input[type=date] { font: inherit; font-family: var(--font-mono); font-size: .85rem; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.status { font-weight: 600; }
+.progress { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+.bar { width: 140px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+
+/* core point */
+.core { display: grid; gap: 24px; }
+.thesis { font-size: 1.2rem; max-width: 64ch; }
+.thesis strong { font-weight: 600; }
+.spine { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); }
+.spine li { padding: 18px 18px 0 0; display: grid; gap: 8px; align-content: start; position: relative; }
+.spine li::before { content: ""; position: absolute; top: -2px; left: 0; right: 18px; height: 3px; background: var(--c); border-radius: 2px; }
+.spine .q { font-family: var(--font-display); font-size: 1.05rem; font-weight: 500; }
+.spine .weeks { color: var(--c); font-weight: 600; }
+.spine p { color: var(--muted); font-size: .95rem; }
+.anchor { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; max-width: 64ch; font-size: 1.05rem; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+th, td { text-align: left; padding: 9px 14px 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+tbody th { font-weight: 600; color: var(--muted); white-space: nowrap; }
+
+/* calendar */
+.cal-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 16px; }
+.controls { display: flex; gap: 8px; }
+button { font: inherit; font-size: .9rem; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 6px 12px; }
+button:hover { border-color: var(--accent); color: var(--accent); }
+.rhythm { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .9rem; color: var(--muted); }
+.kind { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+.k-learn { color: var(--b1); } .k-build { color: var(--b2); } .k-explain { color: var(--b3); } .k-review { color: var(--b4); } .k-buffer { color: var(--muted); }
+
+.mini { display: grid; grid-template-columns: auto repeat(7, 22px); gap: 4px 4px; align-items: center; width: max-content; font-size: .75rem; }
+.mini .wk { font-family: var(--font-mono); color: var(--muted); padding-right: 8px; cursor: pointer; background: none; border: 0; padding-block: 0; text-align: left; }
+.mini .wk:hover { color: var(--accent); }
+.mini .d { width: 22px; height: 16px; border-radius: 3px; background: color-mix(in srgb, var(--c) 22%, transparent); }
+.mini .d.done { background: var(--c); }
+.mini .d.today { outline: 2px solid var(--today); outline-offset: 1px; }
+.mini .hdr { font-family: var(--font-mono); color: var(--muted); text-align: center; font-size: .65rem; }
+.cal-top { display: flex; flex-wrap: wrap; gap: 24px 48px; align-items: start; }
+
+.scroller { overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-left: 0; padding-bottom: 12px; margin-inline: -16px; padding-inline: 16px; scrollbar-color: var(--line) transparent; cursor: grab; }
+.scroller.free { scroll-snap-type: none; }
+.scroller.dragging { cursor: grabbing; user-select: none; }
+.scroller input, .scroller label, .scroller summary { cursor: pointer; }
+.track { display: grid; grid-template-columns: repeat(8, 300px); gap: 12px 16px; width: max-content; }
+.band { grid-row: 1; grid-column: span 2; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 0 2px 6px; border-bottom: 3px solid var(--c); }
+.band h3 { color: var(--c); }
+.band span { font-size: .85rem; color: var(--muted); text-align: right; }
+.week { grid-row: 2; scroll-snap-align: start; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; align-content: start; }
+.week.current { border-color: var(--today); box-shadow: 0 0 0 1px var(--today); }
+.week-top { display: grid; gap: 4px; }
+.week-top .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.week-top .num { font-family: var(--font-mono); font-size: .8rem; color: var(--c); font-weight: 600; }
+.week-top .range { font-family: var(--font-mono); font-size: .78rem; color: var(--muted); }
+.week-top .now { font-family: var(--font-mono); font-size: .7rem; color: var(--today); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.week h4 { font-family: var(--font-display); font-size: 1.2rem; margin: 0; font-weight: 700; }
+.goal { font-size: .9rem; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font-size: .78rem; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--ink); }
+.days { list-style: none; margin: 0; padding: 0; display: grid; border-top: 1px solid var(--line); }
+.days li { display: grid; grid-template-columns: 52px 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: .88rem; }
+.days li.is-today { background: color-mix(in srgb, var(--today) 8%, transparent); box-shadow: inset 3px 0 0 var(--today); padding-left: 6px; margin-left: -6px; }
+.days .date { font-family: var(--font-mono); font-size: .75rem; color: var(--muted); line-height: 1.35; font-variant-numeric: tabular-nums; }
+.days .date b { display: block; color: var(--ink); font-weight: 600; font-size: .8rem; }
+.days .what { display: grid; gap: 2px; min-width: 0; }
+.days .tag { font-family: var(--font-mono); font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.days .tag .hrs { color: var(--muted); font-weight: 400; }
+.deliver { display: grid; gap: 8px; font-size: .9rem; }
+.deliver label { display: flex; gap: 10px; align-items: start; cursor: pointer; font-weight: 600; }
+.deliver input { margin-top: 4px; accent-color: var(--c); width: 16px; height: 16px; flex: none; }
+.selfcheck { font-size: .85rem; color: var(--muted); border-left: 2px solid var(--c); padding-left: 10px; }
+.uses { font-size: .78rem; color: var(--muted); font-family: var(--font-mono); }
+.uses b { color: var(--c); font-weight: 600; }
+.hint { font-size: .85rem; color: var(--muted); }
+
+/* review */
+.review { display: grid; gap: 24px; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+.two ul { margin: 0; padding-left: 1.1em; display: grid; gap: 10px; }
+.two h3 { margin-bottom: 12px; }
+details { border-bottom: 1px solid var(--line); padding: 12px 0; max-width: 72ch; }
+details:first-of-type { border-top: 1px solid var(--line); }
+summary { cursor: pointer; font-weight: 600; }
+details p { margin-top: 8px; color: var(--muted); }
+
+footer { font-size: .85rem; color: var(--muted); }
+
+@media (max-width: 760px) {
+  .spine { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); row-gap: 20px; }
+  .two { grid-template-columns: minmax(0, 1fr); }
+  .track { grid-template-columns: repeat(8, 280px); }
+}
+@media (max-width: 440px) { .spine { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } .scroller { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">8-week study plan · v2 · @Rich · ~7.5 h per week</span>
+    <h1>AI Engineering Foundations</h1>
+    <p class="lede">By week 8 you can explain how a model is trained versus served, reason about latency and cost, and build a small semantic-search app on embeddings.</p>
+    <div class="meta">
+      <span class="status" id="status"></span>
+      <label for="start">Start (Monday)
+        <input type="date" id="start" value="2026-10-05" step="7">
+      </label>
+      <span class="progress"><span class="bar"><i id="barfill"></i></span><span id="progtxt" class="mono">0 / 8 done</span></span>
+    </div>
+  </header>
+
+  <section class="core" aria-labelledby="core-h">
+    <h2 id="core-h">The core point</h2>
+    <p class="thesis">A model is a fixed function: tokens go in, numbers flow through billions of weights, tokens come out. <strong>Training</strong> sets those weights once, slowly and at great cost. <strong>Inference</strong> runs the frozen weights on every request, and that is where latency and cost live. <strong>Embeddings</strong> take the model's internal numbers and use them directly as a measure of meaning you can store and search.</p>
+    <ol class="spine">
+      <li style="--c: var(--b1)"><span class="mono weeks">Weeks 1–2 · Learning</span><span class="q">What is a model, and how does it learn?</span><p>Tokens, loss and gradients, learned by building them rather than memorizing a glossary first.</p></li>
+      <li style="--c: var(--b2)"><span class="mono weeks">Weeks 3–4 · Transformers</span><span class="q">How does a transformer turn text into predictions?</span><p>Vectors and attention first, then you train a small GPT yourself.</p></li>
+      <li style="--c: var(--b3)"><span class="mono weeks">Weeks 5–6 · Inference</span><span class="q">How do frozen weights answer a request?</span><p>Decoding, sampling, serving and cost. Your eval set starts here and is reused to the end.</p></li>
+      <li style="--c: var(--b4)"><span class="mono weeks">Weeks 7–8 · Retrieval &amp; adaptation</span><span class="q">How do I make a model work on my data?</span><p>Embeddings and RAG first, fine-tuning last, in the order the decision ladder recommends.</p></li>
+    </ol>
+    <p class="anchor">The one idea to keep: weights change only during training. Everything you build on top of an API, including RAG, is inference. The decision ladder says <em>prompt → retrieve → fine-tune → train</em>: only move down a step when the one above fails. Weeks 5–8 now follow that ladder in order.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Training</th><th>Inference</th></tr></thead>
+        <tbody>
+          <tr><th>What happens</th><td>Weights are updated</td><td>Weights are frozen; the model only predicts</td></tr>
+          <tr><th>Direction</th><td>Forward + backward pass</td><td>Forward pass only</td></tr>
+          <tr><th>Frequency</th><td>Rarely (weeks or months per run)</td><td>Every user request</td></tr>
+          <tr><th>Cost driver</th><td>Total compute (GPU-hours)</td><td>Tokens processed, latency, concurrency</td></tr>
+          <tr><th>Key metrics</th><td>Loss, eval scores</td><td>Time to first token, tokens/sec, cost per 1M tokens</td></tr>
+          <tr><th>Usually done by</th><td>Research and ML teams</td><td>Application and AI engineers</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="cal-h" style="display:grid; gap:20px">
+    <div class="cal-head">
+      <div style="display:grid; gap:6px">
+        <h2 id="cal-h">Calendar</h2>
+        <div class="rhythm">
+          <span class="kind k-learn"><span class="dot"></span>Learn 3 h (Mon–Tue)</span>
+          <span class="kind k-build"><span class="dot"></span>Build 3 h (Wed–Thu)</span>
+          <span class="kind k-explain"><span class="dot"></span>Explain 1 h (Fri)</span>
+          <span class="kind k-buffer"><span class="dot"></span>Buffer (Sat)</span>
+          <span class="kind k-review"><span class="dot"></span>Review 30 min (Sun)</span>
+        </div>
+      </div>
+      <div class="controls">
+        <button type="button" id="prev" aria-label="Previous week">← Prev</button>
+        <button type="button" id="jump">This week</button>
+        <button type="button" id="next" aria-label="Next week">Next →</button>
+      </div>
+    </div>
+    <div class="cal-top">
+      <div class="mini" id="mini" aria-label="Eight-week overview"></div>
+      <p class="hint" style="max-width:44ch">Each row is a week, each square a day, colored by block. Squares fill in when you tick a week's deliverable. Click a week label to jump to it. Scroll the weeks sideways with the mouse wheel or by dragging. Ticks and start date are saved in this browser only.</p>
+    </div>
+    <div class="scroller" id="scroller" tabindex="0" aria-label="Week-by-week schedule, scroll horizontally">
+      <div class="track" id="track"></div>
+    </div>
+  </section>
+
+  <section class="review" aria-labelledby="rev-h">
+    <h2 id="rev-h">What changed in v2</h2>
+    <p class="col">The original plan covered the right topics, but several weeks relied on ideas taught later. v2 keeps the same topics, hours and four two-week blocks, and reorders them so each week uses only what came before.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Flow problem in v1</th><th>Fix in v2</th></tr></thead>
+        <tbody>
+          <tr><td><b>Attention came before vectors.</b> Week 1 taught attention, but embeddings didn't appear until Week 7. Attention is dot products between token vectors.</td><td>Week 3 teaches vectors, the embedding layer and cosine similarity, then attention the next day. Week 7 reuses all of it.</td></tr>
+          <tr><td><b>Two weeks of terms before using them.</b> Weeks 1–2 were a glossary of words you hadn't used yet, including loss and gradients that Week 3 taught again.</td><td>Each term is learned the week you build with it. The glossary becomes a running document that grows each Friday.</td></tr>
+          <tr><td><b>Fine-tuning came before prompting and RAG.</b> v1 taught LoRA in Week 4, the opposite of its own decision ladder. Comparing outputs also needed sampling and evals it hadn't covered yet.</td><td>Fine-tuning moves to Week 8 as the last rung of the ladder, after prompting (W5) and retrieval (W7–8). Hands-on LoRA becomes a Saturday stretch.</td></tr>
+          <tr><td><b>Jumped straight to nanoGPT.</b> Training a GPT in Week 3 assumed you could already follow backprop and attention.</td><td>Builds in Karpathy's order: micrograd (W2), one attention head (W3), then a full character-level GPT (W4).</td></tr>
+          <tr><td><b>Evals only at the end.</b> The first real test set was the capstone's 10 questions.</td><td>A 10-prompt eval set is written in W5. It measures quantization quality in W6. In W7 the same habit becomes recall@5, and W8 scores the capstone.</td></tr>
+          <tr><td><b>Self-checks in only four weeks.</b></td><td>Every week has one, each checking that week's key idea.</td></tr>
+          <tr><td><b>No prerequisites stated.</b></td><td>Check the prerequisites below during the weekend before Week 1.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="two">
+      <div>
+        <h3>Before Week 1</h3>
+        <ul>
+          <li>Python and Jupyter or Colab notebooks.</li>
+          <li>numpy arrays and basic indexing.</li>
+          <li>Vectors, dot product and matrix multiplication. 3Blue1Brown's Essence of Linear Algebra, chapters 1–4, covers enough.</li>
+          <li>A derivative as "the slope": how much the output moves when the input moves.</li>
+          <li>An API key for one hosted LLM, with a small spending limit.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>What v2 gives up</h3>
+        <ul>
+          <li>Hands-on LoRA becomes optional. You still learn when and why to fine-tune, but the main build in W8 is the RAG capstone.</li>
+          <li>Pretraining at scale (compute, scaling laws) gets one learning day in W4 instead of being spread across a week.</li>
+          <li>W3 and W4 are the heaviest weeks. Use their Saturdays as real buffer days.</li>
+          <li>The Week 6 cost estimate still needs a token assumption: at 1,000 input + 300 output tokens per request, 1,000 users × 20 requests × 30 days is 600M input and 180M output tokens a month.</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:8px">Self-check answers</h3>
+      <p class="hint" style="margin-bottom:8px">Try each one yourself before opening it.</p>
+      <details><summary>W1: Why can the same sentence cost more tokens in one language than another?</summary><p>Tokenizers are built from training text that is mostly English, so common English words become single tokens while other languages and scripts get split into more pieces. You pay per token, and the context window is counted in tokens.</p></details>
+      <details><summary>W2: Training loss keeps falling but validation loss starts rising. What is happening?</summary><p>The model is overfitting: memorizing the training data instead of learning patterns that generalize. Keep the checkpoint with the lowest validation loss (early stopping), add data, shrink the model or add regularization.</p></details>
+      <details><summary>W3: Attention and semantic search both use dot products. What is compared in each?</summary><p>In attention, one token's query is compared with the other tokens' keys inside the model, to decide how much of each token's information to mix in. In semantic search, two finished text embeddings are compared to measure how close their meanings are. Cosine similarity is a dot product of normalized vectors. The math is the same, but the stage and purpose differ.</p></details>
+      <details><summary>W4: Why is a freshly pretrained base model not yet a helpful assistant?</summary><p>Pretraining only teaches it to continue text like its training data, so it might answer a question with more questions. Instruction tuning (SFT) and preference tuning (RLHF, DPO) teach it to follow instructions and reply as an assistant.</p></details>
+      <details><summary>W5: Why can a model with a 128K context window still "forget" earlier chat?</summary><p>The window is a hard limit, not a promise of perfect recall. Chat apps often trim or summarize old turns to save cost, so the text may not be in the window at all. Even when it is, models recall details buried in the middle of a long context less reliably than details near the start or end.</p></details>
+      <details><summary>W6: How much GPU memory does a 7B model in 16-bit need for its weights?</summary><p>7 billion parameters × 2 bytes ≈ 14 GB. The KV cache and activations need more on top. At 4-bit the weights alone drop to about 3.5 GB.</p></details>
+      <details><summary>W7: Why is embedding a document inference, not training? What would training mean here?</summary><p>The embedding model's weights stay frozen; you run a forward pass and read out a vector. Training here means contrastive training or fine-tuning of the embedding model itself on pairs such as (question, relevant passage), so related items land closer together.</p></details>
+      <details><summary>W8: Why does fine-tuning teach style and format more reliably than new facts?</summary><p>Style and format appear in every training example, so a few hundred examples push the weights consistently. A new fact appears only a few times and competes with what pretraining stored, and the model can't signal when it is unsure. Facts that change belong in retrieval, where you can update and cite them.</p></details>
+    </div>
+  </section>
+
+  <section aria-labelledby="res-h" style="display:grid; gap:16px">
+    <h2 id="res-h">Resources</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Resource</th><th>Best for</th><th>Weeks</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://www.3blue1brown.com/topics/linear-algebra" target="_blank" rel="noopener">3Blue1Brown: Essence of Linear Algebra</a></td><td>Vectors and matrix multiplication</td><td class="mono">Before 1</td></tr>
+          <tr><td><a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noopener">3Blue1Brown: Neural Networks</a></td><td>Visual intuition for gradients, backprop and attention</td><td class="mono">1–3</td></tr>
+          <tr><td><a href="https://developers.google.com/machine-learning/crash-course" target="_blank" rel="noopener">Google ML Crash Course</a></td><td>Loss, overfitting, embeddings</td><td class="mono">2–3, 7</td></tr>
+          <tr><td><a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener">The Illustrated Transformer</a></td><td>Transformers and attention, visually</td><td class="mono">3</td></tr>
+          <tr><td><a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noopener">Karpathy: Neural Networks Zero to Hero</a></td><td>micrograd, then building and training a GPT</td><td class="mono">2–4</td></tr>
+          <tr><td><a href="https://huggingface.co/learn/llm-course" target="_blank" rel="noopener">Hugging Face LLM Course</a></td><td>Tokenizers, inference, fine-tuning in practice</td><td class="mono">1, 5–6, 8</td></tr>
+          <tr><td><a href="https://www.sbert.net/" target="_blank" rel="noopener">Sentence Transformers docs</a></td><td>Embedding models and semantic search</td><td class="mono">7–8</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">Links were written from memory. Check each one loads before you start.</p>
+  </section>
+
+  <footer>v2 of "AI Engineering Foundations: 8-Week Study Plan" (Oct 1, 2026): same topics and hours, reordered so each week builds on the last. Daily split and buffer days added for this calendar.</footer>
+</div>
+
+<script>
+(function () {
+  var BLOCKS = [
+    { c: "--b1", name: "How models learn", out: "micrograd, an overfitting demo, a running glossary" },
+    { c: "--b2", name: "Transformers and training", out: "A tiny GPT trained from scratch" },
+    { c: "--b3", name: "Inference", out: "Eval set, benchmark and cost estimate" },
+    { c: "--b4", name: "Retrieval and adaptation", out: "A scored RAG app over your own notes" }
+  ];
+  var WEEKS = [
+    { t: "Models, tokens and a first API call", goal: "Know what a model is, what it predicts, and what you pay for.",
+      uses: "Prerequisites: Python, numpy, vectors",
+      chips: ["Model & parameters", "Weights", "Self-supervised", "Next-token prediction", "Tokens", "Tokenizer", "Context window"],
+      d: ["What a model is: a function with learned parameters. Supervised vs self-supervised; LLMs predict the next token.",
+          "Tokens, tokenizers, vocabulary, context window. HF LLM Course, tokenizers chapter.",
+          "Run tiktoken or HF tokenizers on 10 sentences, including code and a non-English one. Count tokens.",
+          "Make one hosted LLM API call and read the token usage it reports. Start your running glossary.",
+          "Answer the self-check, then teach-back: why do tokens set both cost and limits?"],
+      check: "Why can the same sentence cost more tokens in one language than another?",
+      deliver: "Tokenizer exercise and first API call done, glossary started" },
+    { t: "How models learn", goal: "Follow how an error signal turns into better weights.",
+      uses: "W1: a model is a function with parameters",
+      chips: ["Layers & activations", "Logits & softmax", "Cross-entropy loss", "Gradients", "Backprop", "LR / batch / epoch", "Overfitting", "Train / val / test"],
+      d: ["Neural networks, layers, activations; logits and softmax. 3Blue1Brown chapters 1–2.",
+          "Loss, cross-entropy, gradients, backprop, gradient descent. 3Blue1Brown chapters 3–4.",
+          "Build micrograd with Karpathy (Zero to Hero, video 1).",
+          "Train a tiny PyTorch model with train/val splits. Overfit it on purpose and plot both loss curves.",
+          "Answer the self-check and add this week's terms to the glossary."],
+      check: "Training loss keeps falling but validation loss starts rising. What is happening, and what do you do?",
+      deliver: "micrograd built, overfitting demo plotted" },
+    { t: "Vectors and attention", goal: "See text as vectors and understand how attention mixes them.",
+      uses: "W2: layers, softmax · Prereq: dot product",
+      chips: ["Vectors", "Embedding layer", "Dot product", "Cosine similarity", "Attention", "Q / K / V", "Transformer block", "Positions"],
+      d: ["Vectors, dot product, cosine similarity; the embedding layer turns token IDs into vectors. Google ML Crash Course, embeddings.",
+          "Attention, queries/keys/values, the transformer block. The Illustrated Transformer and 3Blue1Brown's attention chapter.",
+          "In numpy, compute cosine similarity between a handful of word vectors and find nearest neighbors.",
+          "Implement one self-attention head on a 5-token example. Print and read the attention weights.",
+          "Answer the self-check, then teach-back: what does attention let a token do?"],
+      check: "Attention and semantic search both use dot products. What is being compared in each case?",
+      deliver: "Single self-attention head implemented" },
+    { t: "Training a transformer", goal: "Train a small GPT yourself and know what pretraining at scale costs.",
+      uses: "W2: training loop · W3: attention",
+      chips: ["Training loop", "AdamW", "Pretraining", "Base model", "FLOPs", "BF16 / FP16", "Scaling laws", "SFT & RLHF (overview)"],
+      d: ["Training at scale: optimizers, GPUs, FLOPs, mixed precision, why memory limits batch size.",
+          "Pretraining and scaling laws; how a base model becomes an assistant (SFT, RLHF) at a high level.",
+          "Follow Karpathy's “Let's build GPT” and train a character-level model on a small text file.",
+          "Plot training vs validation loss. Change one knob (learning rate, context length or size) and compare samples.",
+          "Answer the self-check, then teach-back: walk through one training step."],
+      check: "Why is a freshly pretrained base model not yet a helpful assistant?",
+      deliver: "Character-level GPT trained, loss curves plotted" },
+    { t: "Generating text", goal: "Know how a model produces each token, and how to steer it.",
+      uses: "W3: Q / K / V · W4: your trained model",
+      chips: ["Autoregressive", "Prefill vs decode", "KV cache", "Temperature", "Top-k / top-p", "System prompt", "Few-shot", "Structured output", "Tool use"],
+      d: ["Autoregressive decoding, prefill vs decode, and the KV cache (it stores the keys and values from Week 3).",
+          "Sampling: greedy, temperature, top-k, top-p, stop sequences. Prompting: system prompts, few-shot, structured output, tool use.",
+          "Sample from your Week 4 model at several temperatures. Then call a hosted API at 0, 0.7 and 1.2, 10 runs each.",
+          "Write a 10-prompt eval set with expected answers and a pass/fail rule. Score the hosted model.",
+          "Answer the self-check, then teach-back: what does temperature change?"],
+      check: "Why can a model with a 128K context window still “forget” something said earlier in a chat?",
+      deliver: "Sampling experiment recorded, eval set written" },
+    { t: "Serving and cost", goal: "Make inference fast and cheap, and estimate what an app costs.",
+      uses: "W5: decoding, KV cache, eval set",
+      chips: ["Latency vs throughput", "TTFT", "Batching", "Prompt caching", "Quantization", "Distillation", "vLLM / Ollama", "GPU memory math", "Token pricing"],
+      d: ["Latency vs throughput, time to first token, continuous batching, prompt caching.",
+          "Quantization (INT8, 4-bit), distillation, serving stacks, GPU memory math, input vs output pricing.",
+          "Run a small model in Ollama or llama.cpp at two quantization levels. Benchmark tokens/sec and TTFT.",
+          "Run your eval set at both levels. Estimate monthly cost for 1,000 users × 20 requests/day, stating tokens per request.",
+          "Answer the self-check, then teach-back: where does inference cost come from?"],
+      check: "A 7B model in 16-bit needs roughly how much GPU memory just for weights?",
+      deliver: "Benchmark, eval comparison and cost estimate done" },
+    { t: "Embeddings and search", goal: "Turn documents into vectors and retrieve the right ones.",
+      uses: "W3: vectors, cosine · W5: eval habit",
+      chips: ["Sentence embeddings", "Contrastive learning", "Cosine search", "PCA / UMAP", "Chunking", "Vector DB", "HNSW", "recall@k"],
+      d: ["Sentence vs word embeddings; how embedding models are trained (contrastive). Sentence Transformers docs.",
+          "Chunking (size, overlap, structure); FAISS, Chroma, pgvector; approximate search (HNSW); recall@k.",
+          "Embed ~200 sentences with all-MiniLM-L6-v2. Find nearest neighbors by cosine and plot in 2D with UMAP or PCA.",
+          "Chunk 20–50 of your own documents into Chroma or FAISS. Write 10 queries with known answers and measure recall@5.",
+          "Answer the self-check, then teach-back: why do similar meanings land close together?"],
+      check: "Embedding a document is inference, not training. Why? What would “training” mean for embeddings?",
+      deliver: "Your notes indexed, recall@5 measured" },
+    { t: "RAG and when to fine-tune", goal: "Ground an LLM in your data, and know when tuning is the better tool.",
+      uses: "W7: your index · W5: prompting, evals · W4: SFT",
+      chips: ["RAG", "Citations", "Hybrid search", "Reranking", "SFT", "LoRA / QLoRA", "DPO", "Decision ladder"],
+      d: ["RAG end to end: retrieve top-k, insert into the prompt, answer with citations. Hybrid search and reranking.",
+          "Adaptation: SFT, LoRA and QLoRA, RLHF and DPO; the ladder prompt → RAG → fine-tune → train.",
+          "Capstone: “chat with my notes” on your Week 7 index, citing which chunk each answer used.",
+          "Score the capstone on your 10 questions. Try one fix (chunk size, reranking or prompt) and re-score.",
+          "Answer the self-check, then write up results and what you would try next."],
+      sat: "Stretch: LoRA-tune a ~0.5B model on free Colab for output format and compare it on your eval set.",
+      check: "Why does fine-tuning usually teach style and format more reliably than new facts?",
+      deliver: "RAG capstone built, scored before and after one fix" }
+  ];
+  var DAYKIND = [
+    ["learn", "Learn", "1.5 h"], ["learn", "Learn", "1.5 h"],
+    ["build", "Build", "1.5 h"], ["build", "Build", "1.5 h"],
+    ["explain", "Explain", "1 h"], ["buffer", "Buffer", ""], ["review", "Review", "30 min"]
+  ];
+
+  function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  var startInput = document.getElementById("start");
+  var done = load("aief2-done", []);
+  var savedStart = load("aief-start", null);
+  if (savedStart) startInput.value = savedStart;
+
+  function parse(iso) { var p = iso.split("-").map(Number); return Date.UTC(p[0], p[1] - 1, p[2]); }
+  function addDays(ms, n) { return ms + n * 86400000; }
+  function fmt(ms, opts) { return new Date(ms).toLocaleDateString("en-US", Object.assign({ timeZone: "UTC" }, opts)); }
+  function todayMs() { var n = new Date(); return Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  var track = document.getElementById("track");
+  var mini = document.getElementById("mini");
+  var scroller = document.getElementById("scroller");
+  var currentWeek = -1;
+
+  function render() {
+    var start = parse(startInput.value || "2026-10-05");
+    var today = todayMs();
+    var offset = Math.floor((today - start) / 86400000);
+    currentWeek = offset >= 0 && offset < 56 ? Math.floor(offset / 7) : -1;
+
+    var html = "";
+    BLOCKS.forEach(function (b, i) {
+      html += '<div class="band" style="--c: var(' + b.c + ')"><h3>Weeks ' + (i * 2 + 1) + "–" + (i * 2 + 2) + " · " + esc(b.name) + "</h3><span>" + esc(b.out) + "</span></div>";
+    });
+    WEEKS.forEach(function (w, i) {
+      var ws = addDays(start, i * 7), we = addDays(ws, 6);
+      var c = BLOCKS[Math.floor(i / 2)].c;
+      var days = "";
+      DAYKIND.forEach(function (k, j) {
+        var dms = addDays(ws, j);
+        var text = j < 5 ? w.d[j] : j === 5 ? (w.sat || "Catch up on anything unfinished, or rest.") : "Flashcard pass over every term learned so far.";
+        days += '<li class="' + (dms === today ? "is-today" : "") + '"><span class="date">' + fmt(dms, { weekday: "short" }) + "<b>" + fmt(dms, { month: "short", day: "numeric" }) + "</b></span>" +
+          '<span class="what"><span class="tag k-' + k[0] + '"><span class="dot"></span>' + k[1] + (k[2] ? ' <span class="hrs">' + k[2] + "</span>" : "") + "</span>" + esc(text) + "</span></li>";
+      });
+      var isDone = done.indexOf(i) !== -1;
+      html += '<article class="week' + (i === currentWeek ? " current" : "") + '" id="w' + (i + 1) + '" style="--c: var(' + c + ')">' +
+        '<div class="week-top"><div class="row"><span class="num">WEEK ' + (i + 1) + "</span>" + (i === currentWeek ? '<span class="now">This week</span>' : "") + "</div>" +
+        '<span class="range">' + fmt(ws, { month: "short", day: "numeric" }) + " – " + fmt(we, { month: "short", day: "numeric", year: "numeric" }) + "</span>" +
+        "<h4>" + esc(w.t) + '</h4><p class="goal">' + esc(w.goal) + '</p><p class="uses"><b>Builds on</b> ' + esc(w.uses) + "</p></div>" +
+        '<div class="chips">' + w.chips.map(function (x) { return '<span class="chip">' + esc(x) + "</span>"; }).join("") + "</div>" +
+        '<ul class="days">' + days + "</ul>" +
+        '<div class="deliver"><span class="eyebrow">Deliverable</span><label for="d' + i + '"><input type="checkbox" id="d' + i + '" data-w="' + i + '"' + (isDone ? " checked" : "") + ">" + esc(w.deliver) + "</label>" +
+        (w.check ? '<p class="selfcheck"><b>Self-check:</b> ' + esc(w.check) + "</p>" : "") + "</div></article>";
+    });
+    track.innerHTML = html;
+
+    var m = '<span></span>';
+    ["M", "T", "W", "T", "F", "S", "S"].forEach(function (d) { m += '<span class="hdr">' + d + "</span>"; });
+    WEEKS.forEach(function (w, i) {
+      var ws = addDays(start, i * 7);
+      var c = BLOCKS[Math.floor(i / 2)].c;
+      m += '<button type="button" class="wk" data-go="' + i + '">W' + (i + 1) + " · " + fmt(ws, { month: "short", day: "numeric" }) + "</button>";
+      for (var j = 0; j < 7; j++) {
+        var dms = addDays(ws, j);
+        m += '<span class="d' + (done.indexOf(i) !== -1 ? " done" : "") + (dms === today ? " today" : "") + '" style="--c: var(' + c + ')" title="' + fmt(dms, { weekday: "short", month: "short", day: "numeric" }) + '"></span>';
+      }
+    });
+    mini.innerHTML = m;
+
+    var status = document.getElementById("status");
+    var end = addDays(start, 55);
+    var range = fmt(start, { month: "short", day: "numeric" }) + " – " + fmt(end, { month: "short", day: "numeric", year: "numeric" });
+    if (offset < 0) status.textContent = range + " · starts in " + (-offset) + (offset === -1 ? " day" : " days");
+    else if (offset < 56) status.textContent = range + " · week " + (currentWeek + 1) + ", day " + (offset % 7 + 1);
+    else status.textContent = range + " · finished";
+
+    document.getElementById("barfill").style.width = (done.length / 8 * 100) + "%";
+    document.getElementById("progtxt").textContent = done.length + " / 8 done";
+  }
+
+  function goTo(i) {
+    i = Math.max(0, Math.min(7, i));
+    var card = document.getElementById("w" + (i + 1));
+    if (card) scroller.scrollTo({ left: card.offsetLeft - track.offsetLeft, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+  function visibleIndex() {
+    var cards = track.querySelectorAll(".week");
+    var x = scroller.scrollLeft + 4;
+    for (var i = 0; i < cards.length; i++) if (cards[i].offsetLeft - track.offsetLeft >= x - 150) return i;
+    return 7;
+  }
+
+  track.addEventListener("change", function (e) {
+    var w = e.target.getAttribute("data-w");
+    if (w === null) return;
+    w = Number(w);
+    done = done.filter(function (x) { return x !== w; });
+    if (e.target.checked) done.push(w);
+    save("aief2-done", done);
+    var keep = scroller.scrollLeft;
+    render();
+    scroller.scrollLeft = keep;
+  });
+  mini.addEventListener("click", function (e) {
+    var g = e.target.getAttribute("data-go");
+    if (g !== null) goTo(Number(g));
+  });
+  startInput.addEventListener("change", function () {
+    if (!startInput.value) return;
+    save("aief-start", startInput.value);
+    render();
+    goTo(currentWeek >= 0 ? currentWeek : 0);
+  });
+  // Snap is paused while the wheel or a drag moves the track, then resumes so it settles on a week.
+  var snapTimer;
+  function pauseSnap() {
+    scroller.classList.add("free");
+    clearTimeout(snapTimer);
+    snapTimer = setTimeout(function () { if (!drag) scroller.classList.remove("free"); }, 180);
+  }
+
+  // Vertical mouse wheel scrolls the weeks sideways until the track reaches either end.
+  scroller.addEventListener("wheel", function (e) {
+    if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    var dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scroller.clientWidth : 1);
+    var max = scroller.scrollWidth - scroller.clientWidth;
+    if ((dy < 0 && scroller.scrollLeft <= 0) || (dy > 0 && scroller.scrollLeft >= max - 1)) return;
+    e.preventDefault();
+    pauseSnap();
+    scroller.scrollLeft += dy;
+  }, { passive: false });
+
+  // Click and drag with the mouse to pan the weeks.
+  var drag = null, suppressClick = false;
+  scroller.addEventListener("pointerdown", function (e) {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    if (e.target.closest("input, label, button, a")) return;
+    drag = { x: e.clientX, left: scroller.scrollLeft, moved: false, id: e.pointerId };
+  });
+  scroller.addEventListener("pointermove", function (e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var dx = e.clientX - drag.x;
+    if (!drag.moved && Math.abs(dx) < 5) return;
+    if (!drag.moved) {
+      drag.moved = true;
+      scroller.setPointerCapture(e.pointerId);
+      scroller.classList.add("dragging", "free");
+    }
+    scroller.scrollLeft = drag.left - dx;
+  });
+  function endDrag(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (drag.moved) {
+      suppressClick = true;
+      setTimeout(function () { suppressClick = false; }, 0);
+      scroller.classList.remove("dragging");
+      drag = null;
+      pauseSnap();
+    } else drag = null;
+  }
+  scroller.addEventListener("pointerup", endDrag);
+  scroller.addEventListener("pointercancel", endDrag);
+  scroller.addEventListener("click", function (e) {
+    if (suppressClick) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+
+  document.getElementById("prev").addEventListener("click", function () { goTo(visibleIndex() - 1); });
+  document.getElementById("next").addEventListener("click", function () { goTo(visibleIndex() + 1); });
+  document.getElementById("jump").addEventListener("click", function () { goTo(currentWeek >= 0 ? currentWeek : 0); });
+
+  render();
+  if (currentWeek > 0) goTo(currentWeek);
+})();
+</script>
